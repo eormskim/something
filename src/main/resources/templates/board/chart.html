@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TOAST UI CHART Pie Chart</title>
+    <!-- 자바스크립트 -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <!-- Toast UI Chart 라이브러리 추가 -->
+    <link rel="stylesheet" href="https://uicdn.toast.com/chart/latest/toastui-chart.min.css">
+    <script src="https://uicdn.toast.com/chart/latest/toastui-chart.min.js"></script>
+</head>
+<body>
+    <div class="chart-container">
+        <div id="pieChart"></div>
+    </div>
+    <label for="searchValue">검색: </label>
+    <input type="text" id="searchValue" onkeyup="enterkey()" maxlength="20" placeholder="이름 입력">
+    <button id="searchBtn">검색</button>
+    <button onclick="location.href='/board/list.wep'" type="button" class="btn btn-sm btn-primary" id="btnList">목록</button>
+
+    <script type="text/javascript">
+        let pieChart;
+        const pieChartContainer = document.getElementById('pieChart');
+        // 차트 옵션
+        const chartOptions = {
+            chart: {
+                width: 1000,
+                height: 500,
+                title: "게시판 데이터"
+            }
+            ,series: {
+                dataLabels: {
+                    visible: true,
+                    pieSeriesName: {
+                        visible: true,
+                        anchor: 'outer',
+                    },
+                },
+            }
+        };
+        $(document).ready(async () => {
+            //차트 기본 데이터 생성
+            $.getJSON("/board/api/chart", async function(data) {
+                if(data.status === "SUCCESS" && data.data.length){
+                    const pieChartData = {
+                        categories: ['게시글 작성자'],
+                        series: []
+                    };
+                    await $.each(data.data, function(key, row) {
+                        pieChartData.series.push({
+                            name: row.name,
+                            data: row.count
+                        });
+                    });
+                    // 원형 차트 생성 및 렌더링
+                    pieChart = new toastui.Chart.pieChart({ el: pieChartContainer, data: pieChartData, options: chartOptions });
+                }else{
+                    alert("등록된 글이 없습니다.");
+                    window.location.href = "/board/list.wep";
+                }
+            });
+            $("#searchBtn").click(function () {
+                searchPieChart();
+            });
+        });
+
+        /**
+         * 차트 검색 조건으로 재생성
+         */
+        const searchPieChart = () =>{
+            let searchVal = $.trim($("#searchValue").val());
+
+            if(searchVal === ""){
+                return alert("검색어를 입력해주세요.");
+            }
+
+            $.getJSON("/board/api/chart/" + searchVal, async function(data) {
+                if(data.status === "SUCCESS" && data.data.length){
+                    const pieChartData = {
+                        categories: ['게시글 작성자'],
+                        series: []
+                    };
+                    await $.each(data.data, function(key, row) {
+                        pieChartData.series.push({
+                            name: row.name,
+                            data: row.count
+                        });
+                    });
+                    // 기존 차트 제거
+                    pieChart.destroy();
+                    // 원형 차트 생성 및 렌더링
+                    pieChart = new toastui.Chart.pieChart({ el: pieChartContainer, data: pieChartData, options: chartOptions });
+                }else{
+                    alert("검색된 차트 데이터가 없습니다.");
+                }
+            });
+        };
+
+        //검색창 엔터키 검색
+        const enterkey = () =>{
+            if (window.event.keyCode === 13) {
+                // 엔터키가 눌렸을 때
+                searchPieChart();
+            }
+        };
+    </script>
+</body>
+</html>

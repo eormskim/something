@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+    <!-- 부가적인 테마 -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+    <!-- 자바스크립트 -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <!-- TOAST UI Grid CSS 파일 -->
+    <link rel="stylesheet" type="text/css" href="https://uicdn.toast.com/tui-grid/latest/tui-grid.css" />
+    <!-- TOAST UI Grid JavaScript 파일 -->
+    <script src="https://uicdn.toast.com/tui-grid/latest/tui-grid.js"></script>
+</head>
+<body>
+    <div id="grid"></div>
+    <div class="text-right">
+        <a href="/board/edit.wep" class="btn btn-primary">글쓰기</a>
+        <a href="/board/chart.wep" class="btn btn-primary">차트보기</a>
+    </div>
+
+    <script type="text/javascript">
+        $(document).ready(async () => {
+            //게시글 목록 조회
+            $.getJSON("/board/api", async function(data) {
+                if(data.status === "SUCCESS"){
+                    const gridData = [];
+                    await $.each(data.data, function(key, row) {
+                        gridData.push({
+                            c0: row.boardId,
+                            c1: row.name,
+                            c2: row.title,
+                            c3: row.content
+                        });
+                    });
+                    await gridLoad(gridData);
+                }else{
+                    alert("등록된 글이 없습니다.");
+                }
+            });
+        });
+
+        /**
+         *  그리드 생성
+         */
+        const gridLoad = (gridData) => {
+            const Grid = tui.Grid;
+
+            /**
+             * 그리드 적용하기
+             * @reference https://nhn.github.io/tui.grid/latest/tutorial-example07-themes
+             */
+            Grid.applyTheme('stripe');
+            // Toast UI Grid 구성하기
+            const grid = new Grid({
+                el: document.getElementById('grid'),
+                data: gridData,
+                scrollX: false,
+                scrollY: false,
+                rowHeight: 35,
+                rowHeaders: ['rowNum'],
+                header: {
+                    height: 40
+                },
+                columns: [
+                    {
+                        header: 'Hidden Key',
+                        name: 'c0',
+                        hidden: true //숨겨진 열로 boardId 값 지정
+                    },
+                    {
+                        header: 'Name',
+                        name: 'c1'
+                    },
+                    {
+                        header: 'Title',
+                        name: 'c2'
+                    },
+                    {
+                        header: 'Content',
+                        name: 'c3'
+                    }
+                ]
+            });
+            // 행 클릭 이벤트 핸들러 등록
+            grid.on('click', (ev) => {
+                const rowKey = ev.rowKey;
+                // 클릭한 행의 데이터 가져오기
+                const rowData = grid.getData(rowKey);
+                let params = {
+                    boardId: rowData[rowKey].c0
+                };
+                //상세 화면으로
+                event.preventDefault();
+                window.location.href = "/board/detail.wep/"+params.boardId;
+            });
+        };
+    </script>
+</body>
+</html>
+
